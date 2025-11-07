@@ -56,5 +56,12 @@
 ## GitHub
 
 - [x] Criar repositório no GitHub
-- [ ] Fazer commit inicial
-- [ ] Push para o repositório remoto
+- [x] Fazer commit inicial
+- [x] Push para o repositório remoto
+
+## Documentação
+
+- [x] Criar README.md completo
+- [x] Adicionar instruções de instalação
+- [x] Documentar configuração do banco de dados
+- [x] Adicionar instruções de execução local

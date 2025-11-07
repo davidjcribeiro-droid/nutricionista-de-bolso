@@ -1,84 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
-import { Nut, Zap, Cake, Ruler, Scale, Calendar } from "lucide-react";
-import { APP_LOGO, APP_TITLE } from "@/const";
-
-// Tipos
-interface CalorieData {
-  date: string;
-  consumed: number;
-}
-
-interface FoodItem {
-  name: string;
-  count: number;
-  icon: string;
-}
-
-interface User {
-  name: string;
-  age: number;
-  height: number;
-  currentWeight: number;
-  targetWeight: number;
-  dailyCalorieGoal: number;
-}
-
-// Mock de dados
-const user: User = {
-  name: "Maria",
-  age: 32,
-  height: 1.65,
-  currentWeight: 72,
-  targetWeight: 65,
-  dailyCalorieGoal: 1800,
-};
-
-const mockRawData = {
-  calorieProgress: [
-    { date: '2025-10-01', consumed: 1750 },
-    { date: '2025-10-02', consumed: 1950 },
-    { date: '2025-10-03', consumed: 1800 },
-    { date: '2025-10-04', consumed: 1600 },
-    { date: '2025-10-05', consumed: 2100 },
-    { date: '2025-10-07', consumed: 1700 },
-    { date: '2025-10-08', consumed: 1900 },
-    { date: '2025-10-09', consumed: 1720 },
-    { date: '2025-10-10', consumed: 1650 },
-    { date: '2025-10-11', consumed: 1880 },
-    { date: '2025-10-12', consumed: 2050 },
-    { date: '2025-10-13', consumed: 1790 },
-    { date: '2025-10-14', consumed: 1680 },
-    { date: '2025-10-15', consumed: 1820 },
-    { date: '2025-10-16', consumed: 1740 },
-    { date: '2025-10-17', consumed: 1930 },
-    { date: '2025-10-18', consumed: 1780 },
-    { date: '2025-10-19', consumed: 2200 },
-    { date: '2025-10-20', consumed: 1800 },
-    { date: '2025-10-21', consumed: 1690 },
-    { date: '2025-10-22', consumed: 1760 },
-    { date: '2025-10-23', consumed: 1810 },
-    { date: '2025-10-24', consumed: 1700 },
-    { date: '2025-10-25', consumed: 1900 },
-    { date: '2025-10-26', consumed: 2150 },
-    { date: '2025-10-27', consumed: 1770 },
-    { date: '2025-10-28', consumed: 1720 },
-    { date: '2025-10-29', consumed: 1880 },
-    { date: '2025-10-30', consumed: 1750 },
-  ],
-  topFoods: [
-    { name: "Pão Francês", count: 80, icon: "🥖" },
-    { name: "Frango Grelhado", count: 75, icon: "🍗" },
-    { name: "Coca-Cola Zero", count: 65, icon: "🥤" },
-    { name: "Arroz Branco", count: 50, icon: "🍚" },
-    { name: "Fast Food (Geral)", count: 40, icon: "🍔" },
-  ],
-  analysisTexts: {
-    good: "Parabéns, Maria! Seu foco nas últimas semanas foi incrível. Você manteve o consumo de calorias **dentro da meta em $P_GOAL$% dos dias**. Continue assim, o peso objetivo está logo ali! 🌟",
-    ok: "Maria, nas últimas semanas você tem mantido o foco, mas seu consumo médio (${AVG_CAL} kcal) está **ligeiramente acima** da meta de ${GOAL_CAL} kcal. Tente incluir mais vegetais e fontes magras no almoço para otimizar seus resultados! 💪",
-    needsWork: "Atenção, Maria! Seu consumo médio (${AVG_CAL} kcal) está **$P_OVER$% acima da meta calórica de ${GOAL_CAL} kcal** nos últimos dias. Identificamos picos nos fins de semana. Que tal planejarmos lanches mais leves? A Glória está aqui para te ajudar a recalcular a rota! 🍎",
-    notEnoughData: "A Glória precisa de mais dados! Por favor, selecione um intervalo de datas maior (ou datas válidas) para que eu possa fazer uma análise precisa do seu progresso. 🧐"
-  }
-};
+import { useState, useMemo } from "react";
+import { Nut, Zap, Cake, Ruler, Scale, Calendar, MessageSquare } from "lucide-react";
+import { APP_TITLE } from "@/const";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 // Funções de utilidade
 const parseDate = (dateString: string): Date | null => {
@@ -91,64 +15,93 @@ const formatInputDate = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
+// Mock de dados padrão caso o usuário não tenha perfil
+const defaultProfile = {
+  age: 32,
+  height: 165,
+  currentWeight: 720,
+  targetWeight: 650,
+  dailyCalorieGoal: 1800,
+};
+
 export default function Home() {
+  const { user, isAuthenticated } = useAuth();
+
   // Define o período padrão (últimos 7 dias)
   const [startDate, setStartDate] = useState(() => {
-    const lastMockDateStr = mockRawData.calorieProgress[mockRawData.calorieProgress.length - 1].date;
-    const endDate = parseDate(lastMockDateStr)!;
-    const start = new Date(endDate);
-    start.setDate(endDate.getDate() - 6);
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
     return formatInputDate(start);
   });
 
   const [endDate, setEndDate] = useState(() => {
-    const lastMockDateStr = mockRawData.calorieProgress[mockRawData.calorieProgress.length - 1].date;
-    return lastMockDateStr;
+    return formatInputDate(new Date());
   });
 
-  // Filtra os dados com base nas datas
-  const filteredCalorieData = useMemo(() => {
-    const start = parseDate(startDate);
-    const end = parseDate(endDate);
+  // Busca perfil do usuário
+  const { data: profile } = trpc.profile.get.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
 
-    if (!start || !end || start > end) return [];
+  // Busca consumo diário
+  const { data: consumptionData = [] } = trpc.consumption.getRange.useQuery(
+    { startDate, endDate },
+    { enabled: isAuthenticated }
+  );
 
-    return mockRawData.calorieProgress.filter(item => {
-      const itemDate = parseDate(item.date);
-      if (!itemDate) return false;
-      return itemDate.getTime() >= start.getTime() && itemDate.getTime() <= end.getTime();
-    });
-  }, [startDate, endDate]);
+  // Busca alimentos mais consumidos
+  const { data: topFoods = [] } = trpc.foods.topConsumed.useQuery(
+    { startDate, endDate, limit: 5 },
+    { enabled: isAuthenticated }
+  );
+
+  // Usa perfil do banco ou valores padrão
+  const userProfile = profile || defaultProfile;
+  const userName = user?.name || "Usuário";
+  const age = userProfile.age || defaultProfile.age;
+  const height = userProfile.height ? (userProfile.height / 100).toFixed(2) : "1.65";
+  const currentWeight = userProfile.currentWeight ? (userProfile.currentWeight / 10).toFixed(1) : "72.0";
+  const targetWeight = userProfile.targetWeight ? (userProfile.targetWeight / 10).toFixed(1) : "65.0";
+  const dailyGoal = userProfile.dailyCalorieGoal || defaultProfile.dailyCalorieGoal;
+
+  // Converte dados do banco para formato do gráfico
+  const calorieChartData = consumptionData.map(item => ({
+    date: formatInputDate(new Date(item.date)),
+    consumed: item.consumed,
+  }));
 
   // Análise da Glória
   const gloriaAnalysis = useMemo(() => {
-    const goal = user.dailyCalorieGoal;
-
-    if (filteredCalorieData.length === 0) {
-      return mockRawData.analysisTexts.notEnoughData;
+    if (calorieChartData.length === 0) {
+      return "A Glória precisa de mais dados! Por favor, registre seu consumo diário para que eu possa fazer uma análise precisa do seu progresso. 🧐";
     }
 
-    const totalConsumed = filteredCalorieData.reduce((sum, item) => sum + item.consumed, 0);
-    const avgConsumed = Math.round(totalConsumed / filteredCalorieData.length);
-    const goalMetDays = filteredCalorieData.filter(item => item.consumed <= goal).length;
-    const percentageGoalMet = Math.round((goalMetDays / filteredCalorieData.length) * 100);
+    const totalConsumed = calorieChartData.reduce((sum, item) => sum + item.consumed, 0);
+    const avgConsumed = Math.round(totalConsumed / calorieChartData.length);
+    const goalMetDays = calorieChartData.filter(item => item.consumed <= dailyGoal).length;
+    const percentageGoalMet = Math.round((goalMetDays / calorieChartData.length) * 100);
 
-    if (percentageGoalMet >= 80 && avgConsumed <= goal * 1.05) {
-      return mockRawData.analysisTexts.good
-        .replace('$P_GOAL$', percentageGoalMet.toString())
-        .replace('${GOAL_CAL}', goal.toString());
-    } else if (avgConsumed > goal * 1.05) {
-      const percentageOver = Math.round(((avgConsumed - goal) / goal) * 100);
-      return mockRawData.analysisTexts.needsWork
-        .replace('$P_OVER$', percentageOver.toString())
-        .replace('${AVG_CAL}', avgConsumed.toString())
-        .replace('${GOAL_CAL}', goal.toString());
+    if (percentageGoalMet >= 80 && avgConsumed <= dailyGoal * 1.05) {
+      return `Parabéns, ${userName}! Seu foco nas últimas semanas foi incrível. Você manteve o consumo de calorias dentro da meta em ${percentageGoalMet}% dos dias. Continue assim, o peso objetivo está logo ali! 🌟`;
+    } else if (avgConsumed > dailyGoal * 1.05) {
+      const percentageOver = Math.round(((avgConsumed - dailyGoal) / dailyGoal) * 100);
+      return `Atenção, ${userName}! Seu consumo médio (${avgConsumed} kcal) está ${percentageOver}% acima da meta calórica de ${dailyGoal} kcal nos últimos dias. Identificamos picos nos fins de semana. Que tal planejarmos lanches mais leves? A Glória está aqui para te ajudar a recalcular a rota! 🍎`;
     } else {
-      return mockRawData.analysisTexts.ok
-        .replace('${AVG_CAL}', avgConsumed.toString())
-        .replace('${GOAL_CAL}', goal.toString());
+      return `${userName}, nas últimas semanas você tem mantido o foco, mas seu consumo médio (${avgConsumed} kcal) está ligeiramente acima da meta de ${dailyGoal} kcal. Tente incluir mais vegetais e fontes magras no almoço para otimizar seus resultados! 💪`;
     }
-  }, [filteredCalorieData]);
+  }, [calorieChartData, dailyGoal, userName]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Nutricionista de Bolso</h1>
+          <p className="text-gray-600">Por favor, faça login para acessar o aplicativo.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 shadow-xl flex flex-col">
@@ -166,7 +119,7 @@ export default function Home() {
       <main className="flex-grow p-4 space-y-6 pb-24">
         {/* Informações do Usuário */}
         <section className="space-y-3">
-          <h2 className="text-2xl font-bold text-gray-900">Olá, {user.name}! 👋</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Olá, {userName}! 👋</h2>
 
           {/* Meta Calórica e Peso Objetivo */}
           <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-md border border-gray-100">
@@ -175,13 +128,13 @@ export default function Home() {
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase">Meta Diária</p>
                 <p className="text-2xl font-bold text-primary">
-                  {user.dailyCalorieGoal} <span className="text-lg font-semibold">kcal</span>
+                  {dailyGoal} <span className="text-lg font-semibold">kcal</span>
                 </p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-xs font-semibold text-gray-500 uppercase">Peso Objetivo</p>
-              <p className="text-xl font-bold text-gray-800">{user.targetWeight} kg</p>
+              <p className="text-xl font-bold text-gray-800">{targetWeight} kg</p>
             </div>
           </div>
 
@@ -190,17 +143,17 @@ export default function Home() {
             <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
               <Cake className="w-5 h-5 text-gray-500 mx-auto mb-1" />
               <p className="text-xs text-gray-500">Idade</p>
-              <p className="text-base font-semibold text-gray-800">{user.age}</p>
+              <p className="text-base font-semibold text-gray-800">{age}</p>
             </div>
             <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
               <Ruler className="w-5 h-5 text-gray-500 mx-auto mb-1" />
               <p className="text-xs text-gray-500">Altura</p>
-              <p className="text-base font-semibold text-gray-800">{user.height} m</p>
+              <p className="text-base font-semibold text-gray-800">{height} m</p>
             </div>
             <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
               <Scale className="w-5 h-5 text-gray-500 mx-auto mb-1" />
               <p className="text-xs text-gray-500">Peso Atual</p>
-              <p className="text-base font-semibold text-gray-800">{user.currentWeight} kg</p>
+              <p className="text-base font-semibold text-gray-800">{currentWeight} kg</p>
             </div>
           </div>
         </section>
@@ -244,15 +197,15 @@ export default function Home() {
         </section>
 
         {/* Gráfico de Progresso */}
-        <CalorieChart data={filteredCalorieData} goal={user.dailyCalorieGoal} />
+        <CalorieChart data={calorieChartData} goal={dailyGoal} />
 
         {/* Histórico de Consumo */}
-        <ConsumptionHistory foods={mockRawData.topFoods} />
+        <ConsumptionHistory foods={topFoods} />
 
         {/* Análise da Glória */}
         <section className="bg-orange-50 p-5 rounded-xl shadow-lg border border-primary/30">
           <div className="flex items-start">
-            <div className="text-primary text-2xl mr-3 flex-shrink-0">💬</div>
+            <MessageSquare className="text-primary w-6 h-6 flex-shrink-0 mt-1 mr-3" />
             <div>
               <h3 className="text-xl font-bold text-primary mb-1">Análise da Glória 🧠</h3>
               <p className="text-gray-800 leading-relaxed italic">{gloriaAnalysis}</p>
@@ -277,6 +230,11 @@ export default function Home() {
 }
 
 // Componente do Gráfico
+interface CalorieData {
+  date: string;
+  consumed: number;
+}
+
 function CalorieChart({ data, goal }: { data: CalorieData[]; goal: number }) {
   if (data.length === 0) {
     return (
@@ -339,7 +297,22 @@ function CalorieChart({ data, goal }: { data: CalorieData[]; goal: number }) {
 }
 
 // Componente do Histórico
+interface FoodItem {
+  foodName: string | null;
+  foodIcon: string | null;
+  count: number;
+}
+
 function ConsumptionHistory({ foods }: { foods: FoodItem[] }) {
+  if (foods.length === 0) {
+    return (
+      <section className="bg-white p-4 rounded-xl shadow-md border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Alimentos Mais Consumidos no Período</h3>
+        <p className="text-center text-gray-500">Nenhum alimento registrado no período selecionado.</p>
+      </section>
+    );
+  }
+
   const maxCount = foods[0]?.count || 1;
   const ranks = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
 
@@ -353,11 +326,11 @@ function ConsumptionHistory({ foods }: { foods: FoodItem[] }) {
 
           return (
             <div key={index} className="flex items-center space-x-3">
-              <span className="text-xl font-bold w-6 text-center">{ranks[index]}</span>
-              <div className="text-2xl">{item.icon}</div>
+              <span className="text-xl font-bold w-6 text-center">{ranks[index] || '🏅'}</span>
+              <div className="text-2xl">{item.foodIcon || '🍽️'}</div>
 
               <div className="flex-grow">
-                <p className="text-sm font-medium text-gray-800">{item.name}</p>
+                <p className="text-sm font-medium text-gray-800">{item.foodName || 'Alimento'}</p>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                   <div
                     className="progress-bar-fill h-2 rounded-full bg-primary/70"

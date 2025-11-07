@@ -12,3 +12,14 @@
 - [x] Dados mockados para demonstração
 - [x] Responsividade mobile-first
 - [x] Ícones usando lucide-react
+
+## Persistência de Dados com Banco de Dados
+
+- [x] Adicionar feature web-db-user ao projeto
+- [x] Criar schema do banco de dados (usuários, consumo diário, alimentos)
+- [x] Implementar API para gerenciar dados do usuário
+- [x] Implementar API para registrar consumo diário
+- [x] Implementar API para gerenciar alimentos
+- [x] Atualizar frontend para buscar dados do banco
+- [x] Implementar autenticação de usuário
+- [ ] Adicionar funcionalidade de registro de refeições

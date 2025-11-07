@@ -96,10 +96,19 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Nutricionista de Bolso</h1>
-          <p className="text-gray-600">Por favor, faça login para acessar o aplicativo.</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Nut className="text-white w-12 h-12" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">Nutricionista de Bolso</h1>
+          <p className="text-gray-600 mb-8">Seu assistente pessoal de nutrição para acompanhar consumo calórico, registrar refeições e alcançar seus objetivos de saúde.</p>
+          <a
+            href="/api/auth/login"
+            className="inline-block w-full py-3 px-6 bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition duration-150"
+          >
+            Fazer Login
+          </a>
         </div>
       </div>
     );

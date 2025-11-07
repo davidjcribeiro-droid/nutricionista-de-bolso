@@ -32,3 +32,7 @@
 - [x] Popular banco de dados com alimentos comuns
 - [x] Adicionar navegação entre páginas
 - [x] Atualizar consumo diário automaticamente ao registrar alimento
+
+## Bug Reportado
+
+- [x] Corrigir tela branca no site publicado (https://nutriapp-5acuc4fq.manus.space)

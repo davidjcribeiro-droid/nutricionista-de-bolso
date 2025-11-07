@@ -52,3 +52,9 @@
 - [x] Corrigir redirecionamento após login bem-sucedido
 - [x] Garantir que useAuth reconheça usuário do localStorage
 - [x] Testar fluxo completo: cadastro → login → dashboard
+
+## GitHub
+
+- [x] Criar repositório no GitHub
+- [ ] Fazer commit inicial
+- [ ] Push para o repositório remoto

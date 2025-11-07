@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Nut, Zap, Cake, Ruler, Scale, Calendar, MessageSquare } from "lucide-react";
+import { Nut, Zap, Cake, Ruler, Scale, Calendar, MessageSquare, Plus } from "lucide-react";
+import { useLocation } from "wouter";
 import { APP_TITLE } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -25,6 +26,7 @@ const defaultProfile = {
 };
 
 export default function Home() {
+  const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
 
   // Define o período padrão (últimos 7 dias)
@@ -213,6 +215,15 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* Botão Flutuante para Adicionar Refeição */}
+      <button
+        onClick={() => setLocation("/add-meal")}
+        className="fixed bottom-20 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-2xl hover:opacity-90 transition duration-150 flex items-center justify-center z-30"
+        title="Adicionar Refeição"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
 
       {/* Rodapé com Botão */}
       <footer className="sticky bottom-0 bg-white p-4 shadow-2xl rounded-t-xl border-t border-gray-100 z-20">

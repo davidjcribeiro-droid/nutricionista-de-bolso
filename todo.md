@@ -22,4 +22,13 @@
 - [x] Implementar API para gerenciar alimentos
 - [x] Atualizar frontend para buscar dados do banco
 - [x] Implementar autenticação de usuário
-- [ ] Adicionar funcionalidade de registro de refeições
+- [x] Adicionar funcionalidade de registro de refeições
+
+## Funcionalidade de Registro de Refeições
+
+- [x] Criar página de registro de refeições
+- [x] Implementar busca de alimentos
+- [x] Adicionar cálculo automático de calorias
+- [x] Popular banco de dados com alimentos comuns
+- [x] Adicionar navegação entre páginas
+- [x] Atualizar consumo diário automaticamente ao registrar alimento

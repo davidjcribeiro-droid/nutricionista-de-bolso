@@ -15,6 +15,13 @@
       "when": 1762535167411,
       "tag": "0001_icy_purple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1762536549122,
+      "tag": "0002_illegal_skullbuster",
+      "breakpoints": true
     }
   ]
 }

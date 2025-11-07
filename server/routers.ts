@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import * as auth from "./auth";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -17,6 +18,54 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+    
+    register: publicProcedure
+      .input(z.object({
+        name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+        email: z.string().email("Email inválido"),
+        password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const userId = await auth.registerUser(input);
+          
+          // Create session for the new user
+          const user = await auth.getUserById(userId);
+          if (user) {
+            // Store user in session (simplified - in production use proper session management)
+            return { success: true, userId, message: "Cadastro realizado com sucesso!" };
+          }
+          
+          return { success: true, userId, message: "Cadastro realizado com sucesso!" };
+        } catch (error: any) {
+          throw new Error(error.message || "Erro ao cadastrar usuário");
+        }
+      }),
+    
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email("Email inválido"),
+        password: z.string().min(1, "Senha é obrigatória"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const user = await auth.loginUser(input.email, input.password);
+          
+          // In a real implementation, you would set a session cookie here
+          // For now, we return the user data
+          return { 
+            success: true, 
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            },
+            message: "Login realizado com sucesso!"
+          };
+        } catch (error: any) {
+          throw new Error(error.message || "Erro ao fazer login");
+        }
+      }),
   }),
 
   // User Profile Router

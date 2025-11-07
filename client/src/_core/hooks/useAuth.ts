@@ -1,7 +1,7 @@
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -12,10 +12,28 @@ export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
   const utils = trpc.useUtils();
+  
+  // Check localStorage for local auth
+  const [localUser, setLocalUser] = useState<any>(null);
+  const [checkedLocalAuth, setCheckedLocalAuth] = useState(false);
+  
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        setLocalUser(userData);
+      } catch (e) {
+        localStorage.removeItem("user");
+      }
+    }
+    setCheckedLocalAuth(true);
+  }, []);
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    enabled: !localUser, // Only query server if no local user
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -25,6 +43,10 @@ export function useAuth(options?: UseAuthOptions) {
   });
 
   const logout = useCallback(async () => {
+    // Clear local storage
+    localStorage.removeItem("user");
+    setLocalUser(null);
+    
     try {
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
@@ -42,17 +64,22 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
+    const effectiveUser = localUser || meQuery.data;
+    if (effectiveUser) {
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(effectiveUser)
+      );
+    }
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
+      user: effectiveUser ?? null,
+      loading: !checkedLocalAuth || (meQuery.isLoading && !localUser) || logoutMutation.isPending,
       error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      isAuthenticated: Boolean(effectiveUser),
     };
   }, [
+    localUser,
+    checkedLocalAuth,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,

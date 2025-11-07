@@ -36,3 +36,13 @@
 ## Bug Reportado
 
 - [x] Corrigir tela branca no site publicado (https://nutriapp-5acuc4fq.manus.space)
+
+## Sistema de Login e Cadastro Próprio
+
+- [x] Criar tabela de usuários no banco de dados
+- [x] Implementar API de cadastro de usuário
+- [x] Implementar API de login com email e senha
+- [x] Criar página de login
+- [x] Criar página de cadastro
+- [ ] Integrar autenticação com sessão (PENDENTE - requer ajuste no hook useAuth para reconhecer localStorage)
+- [x] Criar perfil padrão ao cadastrar novo usuário

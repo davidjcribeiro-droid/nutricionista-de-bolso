@@ -16,7 +16,7 @@ interface SelectedFood {
 
 export default function AddMeal() {
   const [, setLocation] = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
@@ -104,12 +104,21 @@ export default function AddMeal() {
     }
   };
 
-  if (!isAuthenticated) {
+  // Mostrar loading enquanto verifica autenticação
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Por favor, faça login para acessar esta página.</p>
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
       </div>
     );
+  }
+  
+  if (!isAuthenticated) {
+    setLocation("/login");
+    return null;
   }
 
   return (

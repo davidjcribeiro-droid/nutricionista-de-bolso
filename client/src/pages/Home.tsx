@@ -27,7 +27,7 @@ const defaultProfile = {
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
 
   // Define o período padrão (últimos 7 dias)
   const [startDate, setStartDate] = useState(() => {
@@ -94,6 +94,18 @@ export default function Home() {
     }
   }, [calorieChartData, dailyGoal, userName]);
 
+  // Mostrar loading enquanto verifica autenticação
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+  
   // Redirecionar para login se não autenticado
   if (!isAuthenticated) {
     setLocation("/login");

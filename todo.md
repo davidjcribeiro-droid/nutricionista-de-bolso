@@ -46,3 +46,9 @@
 - [x] Criar página de cadastro
 - [ ] Integrar autenticação com sessão (PENDENTE - requer ajuste no hook useAuth para reconhecer localStorage)
 - [x] Criar perfil padrão ao cadastrar novo usuário
+
+## Bug: Redirecionamento após Login
+
+- [x] Corrigir redirecionamento após login bem-sucedido
+- [x] Garantir que useAuth reconheça usuário do localStorage
+- [x] Testar fluxo completo: cadastro → login → dashboard
